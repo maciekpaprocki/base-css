@@ -4,46 +4,49 @@ var fs = require('fs');
 
 var BaseCSS = function(options,extension){
     this.data = options.data;
+    options.brakepoints = options.data.brakepoint;
+    delete options.data;
     this.options = options;
     this.ext = extension;
-    this.templatePaths = [__dirname];
+    this.indent = "    ";
+    this.templatePaths = [__dirname+'/templates'];
     if(typeof this.options.templatePaths !== 'undefined'){
         if(_.isArray(this.options.templatePaths)){
             Array.prototype.apply(this.templatePaths,this.options.templatePaths);
         }
         this.templatePaths.push(this.templatePaths)
     }
-    console.log('initiated');
-    return this;
+
+ 
 }
 
 BaseCSS.prototype.getTemplate = function(name, cb){
     var self = this;
     var templateList = _.map(this.templatePaths,function(value){
-        return self.createPath(value,name,self.extension);
+        return self.createPath(value,name,self.ext);
     });
+
     if(templateList.length === 0){
         return cb(false);
     }
-    async.map(templateList, fs.exists, function(results){
-        var i, l = results.length;
-        for(i = l-1; i>=0; i++){
-            if(results[i]===true) return fs.readFile(templateList[i],function(){
-                cb(templateList[i])
-            });
+    async.filter(templateList, fs.exists, function(results){
+        if(results.length > 0){
+            cb(require(templateList.shift()));
+        }else{
+            return cb(false);
         }
-        return cb(false);
     });
 
 }
 BaseCSS.prototype.createPath = function(dir,name,extension) {
+
     return dir + '/' + name + '.' + extension + '.js';
 }
 BaseCSS.prototype.addTemplatePath = function(dir){
     if(!_.isString){
         throw new Error('Function addTemplatePath expects first attribute to be string');
     }else{  
-        this.templatePaths.push(dir);
+        this.templatePaths.unshift(dir);
     }
     return this;
 };
@@ -53,24 +56,66 @@ BaseCSS.prototype.addTemplatePath = function(dir){
  */
 
 BaseCSS.prototype.getPartial = function(dataName,cb){
+  
+    var self = this;
     if(typeof this.data[dataName] === 'undefined'){
         throw new Error('data not found for ' + dataName);
     }
-    this.getTemplate(index, function(template){
-        if(!template){
-                throw new Error('template not found for ' + dataName);
+    this.getTemplate(dataName, function(fun){
+       
+        if(fun === false){
+            throw new Error('template not found for ' + dataName);
         }
-        cb(_.template(template, {'data':this.data[dataName]})); 
+        var compiled = '';
+        if(_.result(self.data[dataName],'bp',false)){
+            var bp = self.data[dataName].bp;
+            delete self.data[dataName].bp;
+            compiled = fun({'resp':'','transform':function(t){return t;},'data':self.data[dataName],'options':self.options,'_':_});
+            _.each(bp,function(value,index){
+                var content = fun({'resp':index+'-','transform':value,'data':self.data[dataName],'options':self.options,'_':_});
+                compiled +=  self.brakepointwrapper({brakepoint:index,options:self.options,content:content.replace(/(\r\n|\n|\r)/gm,'$&'+self.indent)});
+            });
+        }
+        else{
+            compiled = fun({'resp':'','transform':function(t){return t;},'data':self.data[dataName],'options':self.options,'_':_});
+        }
+        cb(null, compiled); 
     });
+
 };
 
 BaseCSS.prototype.toString = function(cb){
+
     var self = this;
-    var res = [];
-    async.map(_.keys(this.data), BaseCSS.prototype.getPartial.bind(this), function(results){ 
-        return cb(results.join('\n'));
-    });
+    if(!_.result(this,'brakepointwrapper',false)){
+        this.getTemplate('brakepointwrapper',function(fun){
+            self.brakepointwrapper = fun;
+            async.map(_.keys(self.data), BaseCSS.prototype.getPartial.bind(self), function(err,results){ 
+
+                cb(err,results);
+            });
+        })
+    }else{
+        async.map(_.keys(this.data), BaseCSS.prototype.getPartial.bind(this), function(err,results){ 
+            cb(err,results);
+        });
+    }
+   
 };
+BaseCSS.prototype.writeTo = function(path,cb){
+    this.toString(function(err,res){
+        if(err) throw err;
+   
+        fs.writeFile(path,res.join('\n'), function(err) {
+            if(err) {
+                throw err; 
+            }else{
+                cb(path,res);
+            }
+        }); 
+    });
+    
+}
 
 module.exports = function(options,extension){
 
@@ -79,8 +124,9 @@ module.exports = function(options,extension){
     }else if(!_.isString(extension)){
         throw new Error('second argument should be string, try "css" ;)');
     }
-    if(!_.isObject(options)){
-        console.log(new BaseCSS(options,extension));
+    if(_.isObject(options)){
         return new BaseCSS(options,extension);
+    }else{
+        throw new Error('first argument should be object of settings');
     }
 }   
