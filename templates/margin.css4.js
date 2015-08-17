@@ -8,6 +8,7 @@ module.exports = require('lodash').template(
     ".<%=resp%>my<%=index%>{ margin-top:<%=transform(value)%>; margin-bottom:<%=transform(value)%>}\n" +
     ".<%=resp%>mx<%=index%>{ margin-left: <%=transform(value)%>; margin-right:<%=transform(value)%>}\n" +
     "<%});%>"+
+    "<%if(resp!==''){%>" +
     "<%resp = '' %>"+
     "<% _.each(data,function(value,index){%>" +
     ".<%=resp%>m<%=index%>{ margin:<%=transform(value)%>}\n" +
@@ -17,5 +18,5 @@ module.exports = require('lodash').template(
     ".<%=resp%>mr<%=index%>{ margin-right:<%=transform(value)%>}\n" +
     ".<%=resp%>my<%=index%>{ margin-top:<%=transform(value)%>; margin-bottom:<%=transform(value)%>}\n" +
     ".<%=resp%>mx<%=index%>{ margin-left: <%=transform(value)%>; margin-right:<%=transform(value)%>}\n" +
-    "<%});%>"
+    "<%});}%>"
     );

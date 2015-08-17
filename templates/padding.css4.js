@@ -17,6 +17,7 @@ module.exports = require('lodash').template(
         ".<%=resp%>py<%=index%>{ padding-top:<%=transform(value)%>; padding-bottom:<%=transform(value)%>}\n" +
         ".<%=resp%>px<%=index%>{ padding-left: <%=transform(value)%>; padding-right:<%=transform(value)%>}\n" +
     "<%});%>"+
+    "<%if(resp!==''){%>" +
     "<%resp = '' %>"+
     "<% _.each(data,function(value,index){%>" +
         ".<%=resp%>p<%=index%>{ padding:<%=transform(value)%>}\n" +
@@ -26,4 +27,4 @@ module.exports = require('lodash').template(
         ".<%=resp%>pr<%=index%>{ padding-right:<%=transform(value)%>}\n" +
         ".<%=resp%>py<%=index%>{ padding-top:<%=transform(value)%>; padding-bottom:<%=transform(value)%>}\n" +
         ".<%=resp%>px<%=index%>{ padding-left: <%=transform(value)%>; padding-right:<%=transform(value)%>}\n" +
-    "<%});%>");
+    "<%});}%>");

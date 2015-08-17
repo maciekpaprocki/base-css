@@ -2,32 +2,30 @@ var _ = require('lodash');
 
 module.exports = function(ob) {
     "use strict";
-/*    delete ob._;
-*/
-/*    console.log(ob);
-*/
+    /*    delete ob._;
+     */
+    /*    console.log(ob);
+     */
     var base = parseFloat(ob.transform(ob.data.default, 'default')['font-size'].replace(/px$/g, ''));
-    var data = {};
-    _.each(ob.data, function(val, index) {
+
+    var data = _.map(ob.data, function(val, index) {
         var value = ob.transform(val, index);
-        var selectors = _.result(value, 'defaultElemtents', []);
+        var selectors = _.result(val, 'defaultElemtents', []);
         selectors.push('.t-' + index);
         var baseVariation = parseFloat(value['font-size'].replace(/px$/g, ''));
-        console.log(selectors);
-
-        data[index] = {
+        return {
             fontSize: (baseVariation / base) + 'rem',
             lineHeight: value['line-height'].replace(/px$/g, '') / baseVariation + 'em',
             letterSpacing: (value['letter-spacing'] / 1000) + 'em',
             selectors: selectors.join(','),
             textTransform: _.result(value, 'text-transform', false),
             fontFamily: _.result(value, 'font-family', false),
-            c: _.result(value, 'font-weight', false)
+            fontWeight: _.result(value, 'font-weight', false)
         }
     });
 
     var template = _.template(
-        "html{font-size:<%=100*base/16%>%};\n" +
+        "html{font-size:<%=100*base/16%>%}\n" +
         "<%_.each(data,function(value,index){%>" +
         "<%=value.selectors%>{\n" +
         "<%=indent%>font-size:<%=value.fontSize%>;\n" +
@@ -40,7 +38,7 @@ module.exports = function(ob) {
         "<%=indent%>text-transform:<%=value.textTransform%>;\n" +
         "<%}%>" +
         "<%if(value.fontWeight){%>" +
-        "<%=indent%>text-transform:<%=value.fontWeight%>;\n" +
+        "<%=indent%>font-weight:<%=value.fontWeight%>;\n" +
         "<%}%>" +
         "}\n" +
         "<%})%>"

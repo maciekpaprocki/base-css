@@ -81,7 +81,6 @@ BaseCSS.prototype.getPartial = function(dataName, cb) {
                 '_': _
             });
             _.each(bp, function(value, index) {
-                console.log(dataName + ' adding another breakpoint')
                 var content = fun({
                     'resp': index + '-',
                     'transform': value,
